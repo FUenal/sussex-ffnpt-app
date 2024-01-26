@@ -1,0 +1,39 @@
+// Media
+$media-mobile: 768px;
+$media-tablet: 1350px;
+
+// Colors
+$primary: #0C101E;
+$blue: #253550;
+$blue-dark: darken($blue, 10%);
+$teal: #FF9100;
+$cyan: #253550;
+
+$gray: #6e6e6e;
+$gray-dark-1: #4e4e4e;
+$gray-dark-2: #303030;
+$gray-light-1: #a1a1a1;
+$gray-light-2: #cfcfcf;
+
+// Layout
+$card-header-height: 50px;
+$info-button-size: 24px;
+$header-height: 60px;
+$header-height-mobile: 60px;
+$tab-padding: 60px;
+$tab-padding-mobile: 20px;
+$intro-graphic-size: 250px;
+$intro-graphic-size-mobile: 150px;
+
+$shadow-box:
+0 4px 10px rgba(0,0,0,0.2),
+0 2px 3px rgba(0,0,0,0.1);
+
+
+$gradient-main: linear-gradient(45deg, $primary, $blue);
+$slider-gradient: linear-gradient(to bottom, rgba(0,0,0,0.15), rgba(0,0,0,0.05));
+
+$hover-transition: 0.2s;
+$tab-transition: 0.5s;
+$mobile-transition: 0.3s;
+$menu-transition: 0.3s;

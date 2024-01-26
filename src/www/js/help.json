@@ -1,0 +1,74 @@
+{
+  "policy_count": {
+    "title": "Total Supply-Side Commitments",
+    "content": "This box shows the total number of 'Supply-Side Commitments' currently registered in our database, which includes policies such as moratoria, bans and limits, fossil fuel subsidy removals, as well as divestments. These commitments have been made by a wide range of actors, including national governments, local governments, private businesses and faith-based organisations, amongst others."
+  },
+  "gov_pol_count": {
+    "title": "Government Policies",
+    "content": "This box shows the total number of 'policies' currently registered in our database and refers to governmental policies such as moratoria, bans, limits, subsidy removals, and governmental divestments (usually sub-national entities such as cities or city-states). These policies have been introduced at national/federal level, state level and local level by government actors."
+  },
+  "Non_gov_pol_count": {
+    "title": "Divestments",
+    "content": "This box shows the total number of 'divestments' currently registered in our database and refers mainly to non-governmental policies such as divestment pledges from faith-based organisations, private businesses and universities, amongst others. However, there are a number of divestment pledges in our database that were introduced by local government and councils authorities."
+  },
+  "ffnpt_total_count": {
+    "title": "Treaty Endorsements",
+    "content": "This box shows the total number of cities and sub-national governments who have endorsed the global call for a Non-Proliefration Treaty to phase out fossil fuels and support a just transition."
+  },
+  "policy_map": {
+    "title": "Policy Map",
+    "content": "The different shades of colour over each country relates to ‘Annual CO2 Emissions by Fossil Fuels’ rates. You can <strong> modify which fossil fuel type (oil, gas, and coal) emissions you’d like to visualise</strong> on the Policy Map via the layering tool in the bottom right-hand corner, including oil, gas, and coal production rates. The Legend on the bottom left of the ‘World Map’ helps interpreting the different colours based on the chosen metric (Annual CO2 Emissions by oil, gas, coal in million/billion tonnes).</br> As you will notice, when you <strong>hover your mouse over a specific country</strong> you will be given a breakdown of:</br></br> a) The total number of supply-side ‘policies’ within that country,</br> b) The total number of divestment pledges within that country,</br> c) Annual CO2 Emissions by fossil fuels, and</br> d) The Climate Risk Index of the country, which indicates the extent to which that country is impacted by climate-induced extreme weather, such as forest fires, drought and flooding.</br></br> You also have the option to <strong>click on a specific country on the map</strong> and be presented with additional, more detailed information on policies and fossil fuel production data which will appear just below the world map. Once you have selected a country, you will find pie charts for that country’s policies that gives you a breakdown of the splits.</br></br> Each orange circle on the map represents an actor that has endorsed the Fossil Fuel Non-Proliferation Treaty. You can <strong>modify which policy level and type you’d like to visualise on the Policy Map</strong> via the layering tool in the bottom right-hand corner, including the number of divestments, the total number of policies, and the policies at city, state or sub-national region level.</br></br> <strong>You will notice that some countries have zero policies and zero divestment pledges within their jurisdiction. This does not mean that there are no policies within this country, but that our research has not been able to uncover any policies and pledges up to this point in time. As we stated above, this is an ongoing and expanding project and we need your help to create the most comprehensive Tracker possible.</strong>"
+  },
+  "details_policy": {
+    "title": "Policy Details",
+    "content": "In this box you will be presented with more detailed information on policies for the country you selected on the world map. Once you have selected a country, you will find pie charts for that country’s policies that gives you a breakdown of the splits between: </br></br> <strong>a) Commitment by Fossil Fuel Type: </strong>  This tab gives a breakdown of the number of policies and commitments are broken down by the specific type of fossil fuel (oil, gas, coal) they cover.</br> <strong>b) Commitment Type and Level:</strong>  For instance, the number of moratoria, bans and limits policies; the number of moratoria, bans and limits policies introduced at a country-wide national level compared with the number of moratoria, bans and limits policies introduced at a region or city level; the type of organization that divested from fossil fuels (e.g., educational institution, for-profit institution etc.).</br></br> If you wish to <strong>download these pie charts</strong>, either as images (PNG, JPEG, PDG, SVG) or as numerical data (Excel, CSV), then click on the burger menu ≡ to the right-hand side of the pie chart and select your desired format."
+  },
+  "details_policy_sources": {
+    "title": "Policy Sources Details",
+    "content": "In this box you will be presented with more detailed information on policies for the country you selected on the world map. Once you have selected a country, you will find more information on the types and places of Policies in tabular format including:</br></br> <strong>a) Sources: Moratoria, Limits & Bans:</strong>  This tab gives a granular breakdown of the specific policies that relate to either moratoria, limits and bans on the extraction or production of specific fossil fuels. The data is organised by jurisdiction (Where?), category and fuel type (What?), and the start and end date, if publicly available (When?). The sources are provided with archived web links which you are free to explore further.</br> <strong>b) Sources: Subsidy Removals:</strong>  Much like the above, this tab provides a breakdown of the policies pertaining to the removal or phasing out of fossil fuel subsidies. This data is organised by category, fuel type and fuel subtype (What?), a brief description of the policy taken from the source (Why?), and the start and end date of the policies, if available (When?). The sources are once again provided as archived web links.</br> <strong>c) Sources: Divestments:</strong>  In this tab, you will find the breakdown of divestment pledges and initiatives within the country you have selected in the drop-down menu. This data is organised by country and city (Where?), the type of divestment pledge such as whether it covers all fossil fuels or just a specific one (What?), and the organisation that announced the divestment pledge and what type of organisation it is (Who?).</br></br> Again, all the sources for the divestment pledges are archived web links. Due to the amount of divestment pledges within some nations, you can make use of the Search Bar function and the ‘Show 10-100 entries’ function."
+  },
+  "details_fossil": {
+    "title": "Fossil Fuel Profiles",
+    "content": "In this box you will be presented with related to the selected country’s fossil fuel data such as</br></br> <strong>a) Fossil Fuel Share:</strong> This tab gives a breakdown of Gas, Oil and Coal as part of the primary share of energy. This data is historical so you can see how the production of specific fuels has changed over time. For example, the data of the United States of America shows how the share of Gas in its primary energy mix has increased over the past decade, whereas the share of Coal as seen a decline,</br> <strong>b) CO2 Emissions Oil:</strong> This tab gives a breakdown of carbon dioxide emissions by oil over time</br> <strong>c) CO2 Emissions Gas:</strong> This tab gives a breakdown of carbon dioxide emissions by oil over time </br> <strong>d) CO2 Emissions Gas:</strong> This tab gives a breakdown of carbon dioxide emissions by oil over time."
+  },
+  "mbl_count": {
+    "title": "Total number of Moratoria, Bans, and Limits",
+    "content": "This box shows total number of the specific policies currently registered in our database that relate to either moratoria, limits and bans on the extraction or production of specific fossil fuels."
+  },
+  "div_count": {
+    "title": "Total number of Divestments",
+    "content": "This box shows the total number of 'divestments' currently registered in our database and refers mainly to non-governmental policies such as divestment pledges only."
+  },
+  "sr_count": {
+    "title": "Total number of Subsidy Removals",
+    "content": "This box shows the total number of 'subsidy removals' currently registered in our database."
+  },
+  "cumulative_mbl_plot_card": {
+    "title": "Moratoria, bans, and limits across time",
+    "content": "Here we present a graph mapping the historical introduction of moratoria, bans and limits. This graph indicates the acceleration or deceleration of pmoratoria, bans and limits’ introduction, which can be linked to key moments of international climate policy, such as the signing of the Paris Agreement in 2015. By showing this historical data, the Tracker seeks to highlight the growing or diminishing interest in certain supply-side policies which could inform campaign efforts. The graph is available to download in image form (PNG, JPEG, PDF, SVG) or numerical form (XLS, CSV)."
+  },
+  "cumulative_div_plot_card": {
+    "title": "Divestments across time",
+    "content": "Here we present a graph mapping the historical introduction of divestments. This graph indicates the acceleration or deceleration of divestments’ introduction, which can be linked to key moments of international climate policy, such as the signing of the Paris Agreement in 2015. By showing this historical data, the Tracker seeks to highlight the growing or diminishing interest in certain supply-side policies which could inform campaign efforts. The graph is available to download in image form (PNG, JPEG, PDF, SVG) or numerical form (XLS, CSV)."
+  },
+  "cumulative_sr_plot_card": {
+    "title": "Subsidy removals across time",
+    "content": "Here we present a graph mapping the historical introduction of subsidy removals. This graph indicates the acceleration or deceleration of subsidy removals’ introduction, which can be linked to key moments of international climate policy, such as the signing of the Paris Agreement in 2015. By showing this historical data, the Tracker seeks to highlight the growing or diminishing interest in certain supply-side policies which could inform campaign efforts. The graph is available to download in image form (PNG, JPEG, PDF, SVG) or numerical form (XLS, CSV)."
+  },
+  "cumulative_policies_plot_card": {
+    "title": "Divestments across time",
+    "content": "Here we present graphs mapping the historical introduction of policies and divestments. This graph indicates the acceleration or deceleration of policies' or divestments’ introduction, which can be linked to key moments of international climate policy, such as the signing of the Paris Agreement in 2015. By showing this historical data, the Tracker seeks to highlight the growing or diminishing interest in certain supply-side policies which could inform campaign efforts. The graph is available to download in image form (PNG, JPEG, PDF, SVG) or numerical form (XLS, CSV)."
+  },
+  "download_card_content_card1": {
+    "title": "Policy download",
+    "content": "Here we present all moratoria, bans and limitations policies available in our dataset. You can filter the table by columns to display only specific types of polices for example. The tables are available to download in numerical form (XLS, CSV) or simply 'copy' and paste the table into a text processing app."
+  },
+  "download_card_content_card2": {
+    "title": "Policy download",
+    "content": "Here we present all subsidy removal policies available in our dataset. You can filter the table by columns to display only specific types of polices for example. The tables are available to download in numerical form (XLS, CSV) or simply 'copy' and paste the table into a text processing app."
+  },
+  "download_card_content_card3": {
+    "title": "Policy download",
+    "content": "Here we present all divestment pledges available in our dataset. You can filter the table by columns to display only specific types of polices for example. The tables are available to download in numerical form (XLS, CSV) or simply 'copy' and paste the table into a text processing app."
+  }
+}

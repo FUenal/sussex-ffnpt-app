@@ -1,0 +1,118 @@
+.leaflet-map-pane {
+  .leaflet-bases-pane {
+    .country-shape {
+      &:hover {
+        fill-opacity: 0.5;
+      }
+
+      &.selected {
+        fill-opacity: 1;
+        stroke: $blue-dark;
+        stroke-width: 3;
+      }
+    }
+  }
+
+  .leaflet-tooltip {
+    strong {
+      display: block;
+      border-bottom: 2px solid;
+    }
+  }
+    .map-circle-popup {
+    font-weight: bold;
+    font-family: Poppins;
+    border: none;
+    font-size: 15px;
+    filter: drop-shadow(1px 1px 3px #000);
+
+    .leaflet-popup-content-wrapper {
+      color: #f98e03;
+      box-shadow: none;
+      border-radius: 10px 10px 0 0;
+
+      .leaflet-popup-content {
+        background: white;
+        border-radius: 10px 10px 0 0;
+
+        > * {
+          margin: 0 -10px;
+          display: block;
+        }
+
+        > strong {
+          margin: -5px -10px 10px -10px;
+          font-weight: bolder;
+        }
+
+        a {
+          color: #f98e03;
+        }
+
+        &:after {
+          position: absolute;
+          content: "";
+          height: 15px;
+          background: #f98e03;
+          bottom: -10px;
+          left: 0;
+          width: 100%;
+          z-index: -1;
+          border-radius: 0 0 10px 10px;
+        }
+      }
+    }
+
+&.popup-color-253550 {
+      .leaflet-popup-content-wrapper {
+        color: #253550;
+
+        a {
+          color: #253550;
+        }
+
+        .leaflet-popup-content:after {
+          background: #253550;
+        }
+      }
+    }
+
+    &.popup-color-FAB733 {
+      .leaflet-popup-content-wrapper {
+        color: #FAB733;
+
+        a {
+          color: #FAB733;
+        }
+
+        .leaflet-popup-content:after {
+          background: #FAB733;
+        }
+      }
+    }
+
+    &.popup-color-0C101E {
+      .leaflet-popup-content-wrapper {
+        color: #0C101E;
+
+        a {
+          color: #0C101E;
+        }
+
+        .leaflet-popup-content:after {
+          background: #0C101E;
+        }
+      }
+    }
+
+    strong {
+      display: block;
+      border-bottom: 2px solid;
+    }
+  }
+}
+
+#Country-label {
+  font-size: 130%;
+  line-height: 200%;
+}

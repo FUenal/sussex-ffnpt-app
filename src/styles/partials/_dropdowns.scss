@@ -1,0 +1,55 @@
+.dropdownsContainer {
+  @include flex-center;
+  left: 0;
+  padding: 0 $tab-padding;
+  position: absolute;
+  top: $header-height + 30px;
+  width: 100%;
+  z-index: 1001;
+
+  @media only screen and (max-width: $media-tablet) {
+    top: $header-height-mobile * 2 + 20px;
+  }
+
+  @media only screen and (max-width: $media-mobile) {
+    padding: 0 $tab-padding-mobile;
+    top: $header-height-mobile + 20px;
+  }
+}
+
+.dropdown {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+
+  .ui.form .field {
+    align-items: center;
+    display: flex;
+
+    label {
+      margin: 0;
+      margin: 0 20px;
+      white-space: nowrap;
+    }
+
+    // #province_list {
+    //   min-width: 200px;
+    // }
+    
+    #time_interval {
+      min-width: 150px;
+    }
+  }
+
+  &__time {
+    opacity: 0;
+    transition: opacity $tab-transition, visibility 0s $tab-transition;
+    visibility: hidden;
+
+    &--visible {
+      opacity: 1;
+      transition: opacity $tab-transition, visibility 0s;
+      visibility: visible;
+    }
+  }
+}

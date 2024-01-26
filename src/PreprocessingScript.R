@@ -1,0 +1,1032 @@
+#'//////////////////////////////////////////////////////////////////////////////
+#' FILE: app.R
+#' AUTHOR: Fatih Uenal
+#' CREATED: 19-03-2021
+#' MODIFIED: 19-03-2021
+#' PURPOSE: Supply-side policies interactive mapping tool
+#' PACKAGES: various, see below
+#' COMMENTS: NA
+#'//////////////////////////////////////////////////////////////////////////////
+
+## includes code adapted from the following sources:
+# https://github.com/eparker12/nCoV_tracker
+# https://davidruvolo51.github.io/shinytutorials/tutorials/rmarkdown-shiny/
+# https://github.com/rstudio/shiny-examples/blob/master/087-crandash/
+# https://rviews.rstudio.com/2019/10/09/building-interactive-world-maps-in-shiny/
+# https://github.com/rstudio/shiny-examples/tree/master/063-superzip-example
+
+# ShinyProxy + Docker Turtorial here: https://towardsdatascience.com/an-open-source-solution-to-deploy-enterprise-level-r-shiny-applications-2e19d950ff35
+
+## Data Pre-processing Script
+# Pre-processing data for app
+# Preprocessing.R
+# Creates countries_overview_large, state_city_breakdown_map, oil_production, gas_production, coal_production, policy files
+
+# update data with automated script
+# source("divestment_data_daily.R") # option to update weekly new divestment policies
+# source("crowdsourced_data_daily.R") # option to update weekly new manual entry policies
+# source("newsAPI_data_weekly.R") # option to update weekly NewsAPI entries
+
+## Data Pre-processing Script
+# Pre-processing data for app
+
+# load required packages
+library(magrittr)
+# library(rvest)
+library(stringr)
+library(stringi)
+library(readxl)
+library(dplyr)
+library(maps)
+# library(ggplot2)
+library(reshape2)
+library(ggiraph)
+library(RColorBrewer)
+library(leaflet)
+library(geojsonio)
+library(shiny)
+library(shinyWidgets)
+library(shiny.semantic)
+library(shinythemes)
+library(sjmisc)
+library(lubridate)
+# library(kableExtra)
+library(gridExtra)
+library(shinyjs)
+library(highcharter)
+library(data.table)
+library(DT)
+library(sass)
+library(rmapshaper)
+
+# pkgs
+suppressPackageStartupMessages(library(shiny))
+
+# set mapping color for each category of policy
+#All_policies  = "016c59"
+Moratoria_bans_limits = "#253550"
+Subsidy_removal = "#0C101E"
+Divestment = "#045a8d"
+Policies = "#0C101E"  #4d004b
+Divestments = "#253550"  #016c59
+Cities_regions_states = "#FAB733"
+FFNPT_total = "#FF9100"
+Coal = "#FF8E15"
+
+# Added ISO-normed country codes manually into the main xlsx data sheet (sheet 8) and manually updated country
+# names in all sheets to standard format. Cleaning & Wrangling Process is documented in the BitsBites.R file
+
+# import data for updating the image (when dockerizing: do not use this with the 'src/' addition but code below)
+country_overview = read_excel("src/input_data/FF NPT Tracker DRAFT WIP.xlsx", sheet = 2)
+# regional_breakdown = read_excel("input_data/FF NPT Tracker DRAFT WIP.xlsx", sheet = 3)
+state_city_breakdown = read_excel("src/input_data/FF NPT Tracker DRAFT WIP.xlsx", sheet = 4)
+moratoria_bans_limits = read_excel("src/input_data/FF NPT Tracker DRAFT WIP.xlsx", sheet = 5)
+subsidy_removal = read_excel("src/input_data/FF NPT Tracker DRAFT WIP.xlsx", sheet = 6)
+# divestment = read_excel("src/input_data/FF NPT Tracker DRAFT WIP.xlsx", sheet = 7)
+# divestment_new = read_excel("src/input_data/FF NPT Tracker DRAFT WIP.xlsx", sheet = 8)
+divestment_new = read_excel("src/input_data/FF NPT Tracker DRAFT WIP.xlsx", sheet = 12)
+# divestment_scraped = read.csv("src/input_data/divestment_scraped.csv")
+# divestment_scraped = read.csv("src/input_data/divestment_scraped_2022.csv")
+countries = read.csv("src/input_data/countries_codes_and_coordinates.csv")
+worldcountry = geojson_read("src/input_data/50m.geojson", what = "sp")
+country_geoms = read.csv("src/input_data/country_geoms.csv")
+fossil_fuel_primary_energy = read.csv("src/input_data/fossil-fuel-primary-energy.csv")
+fossil_fuels_share_energy = read.csv("src/input_data/fossil-fuels-share-energy.csv")
+annual_share_of_co2_emissions = read.csv("src/input_data/annual-share-of-co2-emissions.csv")
+oil_production = read.csv("src/input_data/oil-production-by-country.csv")
+gas_production = read.csv("src/input_data/gas-production-by-country.csv")
+coal_production = read.csv("src/input_data/coal-production-by-country.csv")
+fossil_fuel_production = read.csv("src/input_data/fossil-fuel-production.csv")
+co2_oil_annual = read.csv("src/input_data/annual-co2-oil.csv")
+co2_gas_annual = read.csv("src/input_data/annual-co2-gas.csv")
+co2_coal_annual = read.csv("src/input_data/annual-co2-coal.csv")
+
+# # import data for updating the image (when dockerizing: do not use this with the 'src/' addition but code above)
+# country_overview = read_excel("input_data/FF NPT Tracker DRAFT WIP.xlsx", sheet = 2)
+# # regional_breakdown = read_excel("input_data/FF NPT Tracker DRAFT WIP.xlsx", sheet = 3)
+# state_city_breakdown = read_excel("input_data/FF NPT Tracker DRAFT WIP.xlsx", sheet = 4)
+# moratoria_bans_limits = read_excel("input_data/FF NPT Tracker DRAFT WIP.xlsx", sheet = 5)
+# subsidy_removal = read_excel("input_data/FF NPT Tracker DRAFT WIP.xlsx", sheet = 6)
+# divestment = read_excel("input_data/FF NPT Tracker DRAFT WIP.xlsx", sheet = 7)
+# divestment_new = read_excel("input_data/FF NPT Tracker DRAFT WIP.xlsx", sheet = 8)
+# divestment_scraped = read.csv("input_data/divestment_scraped.csv")
+# countries = read.csv("input_data/countries_codes_and_coordinates.csv")
+# worldcountry = geojson_read("input_data/50m.geojson", what = "sp")
+# country_geoms = read.csv("input_data/country_geoms.csv")
+# fossil_fuel_primary_energy = read.csv("input_data/fossil-fuel-primary-energy.csv")
+# fossil_fuels_share_energy = read.csv("input_data/fossil-fuels-share-energy.csv")
+# annual_share_of_co2_emissions = read.csv("input_data/annual-share-of-co2-emissions.csv")
+# oil_production = read.csv("input_data/oil-production-by-country.csv")
+# gas_production = read.csv("input_data/gas-production-by-country.csv")
+# coal_production = read.csv("input_data/coal-production-by-country.csv")
+# fossil_fuel_production = read.csv("input_data/fossil-fuel-production.csv")
+# co2_oil_annual = read.csv("input_data/annual-co2-oil.csv")
+# co2_gas_annual = read.csv("input_data/annual-co2-gas.csv")
+# co2_coal_annual = read.csv("input_data/annual-co2-coal.csv")
+
+worldcountry <- rmapshaper::ms_simplify(worldcountry, keep = 0.05)
+
+# Add geo data to sheets
+country_overview['latitude'] <- countries$latitude[match(country_overview$ISO3, countries$ISO3)]
+country_overview['longitude'] <- countries$longitude[match(country_overview$ISO3, countries$ISO3)]
+country_overview['global_level'] <- countries$global_level[match(country_overview$ISO3, countries$ISO3)]
+country_overview['continent_level'] <- countries$continent_level[match(country_overview$ISO3, countries$ISO3)]
+
+# Added ISO Codes to all sheets manually due to mismatching name.
+
+### MAP FUNCTIONS ###
+# select large countries for mapping polygons
+country_overview_large = country_overview %>% filter(ISO3 %in% worldcountry$ADM0_A3)
+if (all(country_overview_large$ISO3 %in% worldcountry$ADM0_A3)==FALSE) { print("Error: inconsistent country names")}
+country_overview_large = country_overview_large[order(country_overview_large$ISO3),]
+
+### DATA PROCESSING: Policy Tracker Mapping: number of governmental and non-governmental and total number of policies and transfer to country_overview_large file###
+country_overview_large <- country_overview_large %>% replace(is.na(.), 0)
+
+## Calculate number of governmental and non-governmental policies
+moratoria_bans_limits <- moratoria_bans_limits %>% group_by(ISO3) %>% mutate(a = sum(mbl_country))
+moratoria_bans_limits <- moratoria_bans_limits %>% group_by(ISO3) %>% mutate(b = sum(mbl_city_region))
+divestment_new <- divestment_new %>% group_by(ISO3) %>% mutate(a = sum(divestment_city_region))
+divestment_new <- divestment_new %>% group_by(ISO3) %>% mutate(b = sum(divestment_non_government))
+# divestment <- divestment %>% group_by(ISO3) %>% mutate(a = sum(divestment_city_region))
+# divestment <- divestment %>% group_by(ISO3) %>% mutate(b = sum(divestment_non_government))
+subsidy_removal <- subsidy_removal %>% group_by(ISO3) %>% mutate(a = sum(Policy))
+
+# Further Breakdown of policies (Fossil Type and Sub-category of policy) 08.10.21
+moratoria_bans_limits <- moratoria_bans_limits %>% group_by(ISO3) %>% mutate("MBL_Class_Moratorium" = sum(Category == "Moratorium"))
+moratoria_bans_limits <- moratoria_bans_limits %>% group_by(ISO3) %>% mutate("MBL_Class_Ban" = sum(Category == "Ban"))
+moratoria_bans_limits <- moratoria_bans_limits %>% group_by(ISO3) %>% mutate("MBL_Class_Partial_Ban" = sum(Category == "Partial Ban"))
+moratoria_bans_limits <- moratoria_bans_limits %>% group_by(ISO3) %>% mutate("MBL_Class_Limitation" = sum(Category == "Limitation"))
+moratoria_bans_limits <- moratoria_bans_limits %>% group_by(ISO3) %>% mutate("MBL_Type_Oil" = sum(Fuel_type == "Oil"))
+moratoria_bans_limits <- moratoria_bans_limits %>% group_by(ISO3) %>% mutate("MBL_Type_Gas" = sum(Fuel_type == "Gas"))
+moratoria_bans_limits <- moratoria_bans_limits %>% group_by(ISO3) %>% mutate("MBL_Type_Coal" = sum(Fuel_type == "Coal"))
+moratoria_bans_limits <- moratoria_bans_limits %>% group_by(ISO3) %>% mutate("MBL_Type_Offshore" = sum(Fuel_type == "Offshore"))
+moratoria_bans_limits <- moratoria_bans_limits %>% group_by(ISO3) %>% mutate("MBL_Type_Oil_Gas" = sum(Fuel_type == "Oil & Gas"))
+moratoria_bans_limits <- moratoria_bans_limits %>% group_by(ISO3) %>% mutate("MBL_Type_Oil_Gas_Coal" = sum(Fuel_type == "Oil, Gas & Coal"))
+moratoria_bans_limits <- moratoria_bans_limits %>% group_by(ISO3) %>% mutate("MBL_Type_Coal_Gas" = sum(Fuel_type == "Coal & Gas"))
+moratoria_bans_limits <- moratoria_bans_limits %>% group_by(ISO3) %>% mutate("MBL_Type_All" = sum(Fuel_type == "All"))
+moratoria_bans_limits <- moratoria_bans_limits %>% group_by(ISO3) %>% mutate("MBL_Type_Ore" = sum(Fuel_type == "Ore"))
+
+divestment_new <- divestment_new %>% group_by(Country) %>% mutate("Div_Type_Full" = sum(Type == "Full"))
+divestment_new <- divestment_new %>% group_by(Country) %>% mutate("Div_Type_Partial" = sum(Type == "Partial"))
+divestment_new <- divestment_new %>% group_by(Country) %>% mutate("Div_Type_Fossil_Free" = sum(Type == "Fossil Free"))
+divestment_new <- divestment_new %>% group_by(Country) %>% mutate("Div_Type_Coal_Only" = sum(Type == "Coal Only"))
+divestment_new <- divestment_new %>% group_by(Country) %>% mutate("Div_Type_Coal_and_Tar_Sands_Only" = sum(Type == "Coal and Tar Sands Only"))
+
+divestment_new <- divestment_new %>% group_by(Country) %>% mutate("Div_Orga_Faith_based_Organization" = sum(Organisation_type == "Faith-based Organization"))
+divestment_new <- divestment_new %>% group_by(Country) %>% mutate("Div_Orga_NGO" = sum(Organisation_type == "NGO"))
+divestment_new <- divestment_new %>% group_by(Country) %>% mutate("Div_Orga_Pension_Fund" = sum(Organisation_type == "Pension Fund"))
+divestment_new <- divestment_new %>% group_by(Country) %>% mutate("Div_Orga_For_Profit_Corporation" = sum(Organisation_type == "For Profit Corporation"))
+divestment_new <- divestment_new %>% group_by(Country) %>% mutate("Div_Orga_Philanthropic_Foundation" = sum(Organisation_type == "Philanthropic Foundation"))
+divestment_new <- divestment_new %>% group_by(Country) %>% mutate("Div_Orga_Government" = sum(Organisation_type == "Government"))
+divestment_new <- divestment_new %>% group_by(Country) %>% mutate("Div_Orga_Educational_Institution" = sum(Organisation_type == "Educational Institution"))
+divestment_new <- divestment_new %>% group_by(Country) %>% mutate("Div_Orga_Healthcare_Institution" = sum(Organisation_type == "Healthcare Institution"))
+divestment_new <- divestment_new %>% group_by(Country) %>% mutate("Div_Orga_Cultural_Institution" = sum(Organisation_type == "Cultural Institution"))
+divestment_new <- divestment_new %>% group_by(Country) %>% mutate("Div_Orga_Other" = sum(Organisation_type == "Other"))
+
+subsidy_removal <- subsidy_removal %>% group_by(ISO3) %>% mutate("Sr_Type_All" = sum(Fuel_type == "All"))
+subsidy_removal <- subsidy_removal %>% group_by(ISO3) %>% mutate("Sr_Type_Coal" = sum(Fuel_type == "Coal"))
+subsidy_removal <- subsidy_removal %>% group_by(ISO3) %>% mutate("Sr_Type_Gas" = sum(Fuel_type == "Gas"))
+subsidy_removal <- subsidy_removal %>% group_by(ISO3) %>% mutate("Sr_Type_Oil" = sum(Fuel_type == "Oil"))
+subsidy_removal <- subsidy_removal %>% group_by(ISO3) %>% mutate("Sr_Type_Oil_Gas" = sum(Fuel_type == "Oil & Gas"))
+subsidy_removal <- subsidy_removal %>% group_by(ISO3) %>% mutate("Sr_Type_Oil_Coal" = sum(Fuel_type == "Oil & Coal"))
+subsidy_removal <- subsidy_removal %>% group_by(ISO3) %>% mutate("Sr_Type_Gas_Coal" = sum(Fuel_type == "Gas & Coal"))
+
+
+# Replace NAs
+#country_overview_large <- country_overview_large %>% replace(is.na(.), 0)
+
+## Transfer total number and breakdowns of policies to country_overview_large file
+country_overview_large['mbl_country'] <- moratoria_bans_limits$a[match(country_overview_large$ISO3, moratoria_bans_limits$ISO3)]
+country_overview_large['mbl_city_region'] <- moratoria_bans_limits$b[match(country_overview_large$ISO3, moratoria_bans_limits$ISO3)]
+country_overview_large['divestment_city_region'] <- divestment_new$a[match(country_overview_large$ISO3, divestment_new$ISO3)]
+country_overview_large['divestment_non_government'] <- divestment_new$b[match(country_overview_large$ISO3, divestment_new$ISO3)]
+country_overview_large['subsidy_removal'] <- subsidy_removal$a[match(country_overview_large$ISO3, subsidy_removal$ISO3)]
+
+
+
+# Further Breakdown of policies (Fossil Type and Sub-category of policy) 08.10.21
+country_overview_large["MBL_Class_Moratorium"] <- moratoria_bans_limits$"MBL_Class_Moratorium"[match(country_overview_large$ISO3, moratoria_bans_limits$ISO3)]
+country_overview_large["MBL_Class_Ban"] <- moratoria_bans_limits$"MBL_Class_Ban"[match(country_overview_large$ISO3, moratoria_bans_limits$ISO3)]
+country_overview_large["MBL_Class_Partial_Ban"] <- moratoria_bans_limits$"MBL_Class_Partial_Ban"[match(country_overview_large$ISO3, moratoria_bans_limits$ISO3)]
+country_overview_large["MBL_Class_Limitation"] <- moratoria_bans_limits$"MBL_Class_Limitation"[match(country_overview_large$ISO3, moratoria_bans_limits$ISO3)]
+country_overview_large["MBL_Type_Oil"] <- moratoria_bans_limits$"MBL_Type_Oil"[match(country_overview_large$ISO3, moratoria_bans_limits$ISO3)]
+country_overview_large["MBL_Type_Gas"] <- moratoria_bans_limits$"MBL_Type_Gas"[match(country_overview_large$ISO3, moratoria_bans_limits$ISO3)]
+country_overview_large["MBL_Type_Coal"] <- moratoria_bans_limits$"MBL_Type_Coal"[match(country_overview_large$ISO3, moratoria_bans_limits$ISO3)]
+country_overview_large["MBL_Type_Offshore"] <- moratoria_bans_limits$"MBL_Type_Offshore"[match(country_overview_large$ISO3, moratoria_bans_limits$ISO3)]
+country_overview_large["MBL_Type_Oil_Gas"] <- moratoria_bans_limits$"MBL_Type_Oil_Gas"[match(country_overview_large$ISO3, moratoria_bans_limits$ISO3)]
+country_overview_large["MBL_Type_Oil_Gas_Coal"] <- moratoria_bans_limits$"MBL_Type_Oil_Gas_Coal"[match(country_overview_large$ISO3, moratoria_bans_limits$ISO3)]
+country_overview_large["MBL_Type_Coal_Gas"] <- moratoria_bans_limits$"MBL_Type_Coal_Gas"[match(country_overview_large$ISO3, moratoria_bans_limits$ISO3)]
+country_overview_large["MBL_Type_All"] <- moratoria_bans_limits$"MBL_Type_All"[match(country_overview_large$ISO3, moratoria_bans_limits$ISO3)]
+country_overview_large["MBL_Type_Ore"] <- moratoria_bans_limits$"MBL_Type_Ore"[match(country_overview_large$ISO3, moratoria_bans_limits$ISO3)]
+
+country_overview_large["Div_Type_Full"] <- divestment_new$"Div_Type_Full"[match(country_overview_large$Country, divestment_new$Country)]
+country_overview_large["Div_Type_Partial"] <- divestment_new$"Div_Type_Partial"[match(country_overview_large$Country, divestment_new$Country)]
+country_overview_large["Div_Type_Fossil_Free"] <- divestment_new$"Div_Type_Fossil_Free"[match(country_overview_large$Country, divestment_new$Country)]
+country_overview_large["Div_Type_Coal_Only"] <- divestment_new$"Div_Type_Coal_Only"[match(country_overview_large$Country, divestment_new$Country)]
+country_overview_large["Div_Type_Coal_and_Tar_Sands_Only"] <- divestment_new$"Div_Type_Coal_and_Tar_Sands_Only"[match(country_overview_large$Country, divestment_new$Country)]
+country_overview_large["Div_Orga_Faith_based_Organization"] <- divestment_new$"Div_Orga_Faith_based_Organization"[match(country_overview_large$Country, divestment_new$Country)]
+country_overview_large["Div_Orga_NGO"] <- divestment_new$"Div_Orga_NGO"[match(country_overview_large$Country, divestment_new$Country)]
+country_overview_large["Div_Orga_Pension_Fund"] <- divestment_new$"Div_Orga_Pension_Fund"[match(country_overview_large$Country, divestment_new$Country)]
+country_overview_large["Div_Orga_For_Profit_Corporation"] <- divestment_new$"Div_Orga_For_Profit_Corporation"[match(country_overview_large$Country, divestment_new$Country)]
+country_overview_large["Div_Orga_Philanthropic_Foundation"] <- divestment_new$"Div_Orga_Philanthropic_Foundation"[match(country_overview_large$Country, divestment_new$Country)]
+country_overview_large["Div_Orga_Government"] <- divestment_new$"Div_Orga_Government"[match(country_overview_large$Country, divestment_new$Country)]
+country_overview_large["Div_Orga_Educational_Institution"] <- divestment_new$"Div_Orga_Educational_Institution"[match(country_overview_large$Country, divestment_new$Country)]
+country_overview_large["Div_Orga_Healthcare_Institution"] <- divestment_new$"Div_Orga_Healthcare_Institution"[match(country_overview_large$Country, divestment_new$Country)]
+country_overview_large["Div_Orga_Cultural_Institution"] <- divestment_new$"Div_Orga_Cultural_Institution"[match(country_overview_large$Country, divestment_new$Country)]
+country_overview_large["Div_Orga_Other"] <- divestment_new$"Div_Orga_Other"[match(country_overview_large$Country, divestment_new$Country)]
+
+country_overview_large['Sr_Type_All'] <- subsidy_removal$"Sr_Type_All"[match(country_overview_large$ISO3, subsidy_removal$ISO3)]
+country_overview_large['Sr_Type_Coal'] <- subsidy_removal$"Sr_Type_Coal"[match(country_overview_large$ISO3, subsidy_removal$ISO3)]
+country_overview_large['Sr_Type_Gas'] <- subsidy_removal$"Sr_Type_Gas"[match(country_overview_large$ISO3, subsidy_removal$ISO3)]
+country_overview_large['Sr_Type_Oil'] <- subsidy_removal$"Sr_Type_Oil"[match(country_overview_large$ISO3, subsidy_removal$ISO3)]
+country_overview_large['Sr_Type_Oil_Gas'] <- subsidy_removal$"Sr_Type_Oil_Gas"[match(country_overview_large$ISO3, subsidy_removal$ISO3)]
+country_overview_large['Sr_Type_Oil_Coal'] <- subsidy_removal$"Sr_Type_Oil_Coal"[match(country_overview_large$ISO3, subsidy_removal$ISO3)]
+country_overview_large['Sr_Type_Gas_Coal'] <- subsidy_removal$"Sr_Type_Gas_Coal"[match(country_overview_large$ISO3, subsidy_removal$ISO3)]
+
+
+## Total number of state, city, region policies
+state_city_breakdown_map <- state_city_breakdown %>%
+        select(c("State_city_region", "Country", "latitude", "longitude", "ISO3", "Moratoria_bans_limits", "Subsidy_removal", "Divestment", "FFNPT", "Source")) %>%
+        replace(is.na(.), 0)
+
+state_city_breakdown_map <- state_city_breakdown_map %>% group_by(State_city_region) %>%
+        mutate(Moratoria_bans_limits_total = sum(Moratoria_bans_limits))
+
+state_city_breakdown_map <- state_city_breakdown_map %>% group_by(State_city_region) %>%
+        mutate(Divestment_total = sum(Divestment))
+
+state_city_breakdown_map <- state_city_breakdown_map %>% group_by(State_city_region) %>%
+        mutate(Subsidy_removal_total = sum(Subsidy_removal))
+
+state_city_breakdown_map <- state_city_breakdown_map %>% group_by(State_city_region) %>%
+        mutate(ffnpt_total = sum(FFNPT))
+
+state_city_breakdown_map <- state_city_breakdown_map %>% group_by(State_city_region) %>%
+        mutate(City_region_state_total = sum(Moratoria_bans_limits + Divestment + Subsidy_removal + FFNPT))
+
+# Further Breakdown of policies (FFNPT Endorsements) 02.01.22
+state_city_breakdown_map <- state_city_breakdown_map %>% group_by(ISO3) %>% mutate(treaty = sum(FFNPT)) 
+country_overview_large['treaty_total'] <- state_city_breakdown_map$treaty[match(country_overview_large$ISO3, state_city_breakdown_map$ISO3)]
+
+## Calculate total number of policies
+country_overview_large <- country_overview_large %>% group_by(ISO3) %>%
+        mutate(Moratoria_bans_limits_total = mbl_country + mbl_city_region)
+
+country_overview_large <- country_overview_large %>% group_by(ISO3) %>%
+        mutate(Divestment_total = divestment_city_region + divestment_non_government)
+
+country_overview_large <- country_overview_large %>% group_by(ISO3) %>%
+        mutate(Subsidy_removal_total = sum(subsidy_removal))
+
+country_overview_large <- country_overview_large %>% replace(is.na(.), 0)
+
+country_overview_large <- country_overview_large %>% group_by(ISO3) %>%
+        mutate(Policy_total = Moratoria_bans_limits_total + Subsidy_removal_total + Divestment_total + treaty_total)
+
+country_overview_large <- country_overview_large %>% group_by(ISO3) %>%
+        mutate(Government_policies_total = Moratoria_bans_limits_total + Subsidy_removal_total + divestment_city_region)
+
+country_overview_large <- country_overview_large %>% group_by(ISO3) %>%
+        mutate(Non_Government_policies_total = divestment_non_government)
+
+
+# Matching dates from original divestment file with newly scraped divestment file
+# divestment_new$Start <- divestment$Start[match(divestment_new$Organisation, divestment$Organisation)]
+
+
+### Pull Fossil-Fuel production to country_overview file via ISO3 and filter by Year 2020
+fossil_fuel_production_2020 <- fossil_fuel_production %>%
+        filter(Year == 2019)
+
+fossil_fuel_production_2020 <- fossil_fuel_production_2020 %>% replace(is.na(.), 0)
+
+# remove regions
+fossil_fuel_production_2020 <- fossil_fuel_production_2020[-c(1,5,14,25,26,42,48,49,51,61,80), ]
+
+# Adjust country names
+fossil_fuel_production_2020 <- fossil_fuel_production_2020 %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'United States', replacement = "United States of America")
+})
+
+fossil_fuel_production_2020 <- fossil_fuel_production_2020 %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Russia', replacement = "Russian Federation")
+})
+
+fossil_fuel_production_2020 <- fossil_fuel_production_2020 %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Iran', replacement = "Iran, Islamic Republic of")
+})
+
+fossil_fuel_production_2020 <- fossil_fuel_production_2020 %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Democratic Republic of Congo', replacement = "Congo, (Kinshasa)")
+})
+
+fossil_fuel_production_2020 <- fossil_fuel_production_2020 %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'South Korea', replacement = "Korea, (South)")
+})
+
+fossil_fuel_production_2020 <- fossil_fuel_production_2020 %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'North Korea', replacement = "Korea, (North)")
+})
+
+fossil_fuel_production_2020 <- fossil_fuel_production_2020 %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Tanzania', replacement = "Tanzania, United Republic of")
+})
+
+fossil_fuel_production_2020 <- fossil_fuel_production_2020 %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Taiwan', replacement = "Taiwan, Republic of China")
+})
+
+fossil_fuel_production_2020 <- fossil_fuel_production_2020 %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Macau', replacement = "Macao, SAR China")
+})
+
+fossil_fuel_production_2020 <- fossil_fuel_production_2020 %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Laos', replacement = "Lao PDR")
+})
+
+# EDA
+# max(fossil_fuel_production_2020$Oil.Production...TWh) # Max 2020 =  8289.033
+# max(fossil_fuel_production_2020$Gas.Production...TWh) # Max 2020 = 9146.21
+# max(fossil_fuel_production_2020$Coal.Production...TWh) # Max 2020 = 22475.08
+
+# plot(fossil_fuel_production_2020$Oil.Production...TWh)
+# plot(fossil_fuel_production_2020$Gas.Production...TWh)
+# plot(fossil_fuel_production_2020$Coal.Production...TWh)
+
+# TODO confirm if column names are correct
+# Oil
+country_overview_large["oil_production_2020"] <- fossil_fuel_production_2020$Oil.Production...TWh[match(country_overview_large$ISO3,
+                                                                                                        fossil_fuel_production_2020$Code)]
+
+# Gas
+country_overview_large["gas_production_2020"] <- fossil_fuel_production_2020$Gas.Production...TWh[match(country_overview_large$ISO3,
+                                                                                                        fossil_fuel_production_2020$Code)]
+
+# Coal
+country_overview_large["coal_production_2020"] <- fossil_fuel_production_2020$Coal.Production...TWh[match(country_overview_large$ISO3,
+                                                                                                          fossil_fuel_production_2020$Code)]
+country_overview_large <- country_overview_large %>% replace(is.na(.), 0)
+
+# Factor and label Fossil Fuel prodcution across countries in 2020
+# Oil
+country_overview_large$oil_production_2020_cat <- cut(country_overview_large$oil_production_2020, breaks = c(-1, 1, 500, 1000, 1500, 2000, 4000, 8000, 10000),
+                                                      labels = c("No data", "1-500TWh", "500-1000TWH","1000-1500TWH", "1500-2000TWH","2000-4000TWh", "4000-8000TWh", "8000-10000TWh"), right = TRUE)
+
+# Gas
+country_overview_large$gas_production_2020_cat <- cut(country_overview_large$gas_production_2020, breaks = c(-1, 1, 500, 1000, 1500, 2000, 4000, 8000, 10000),
+                                                      labels = c("No data", "1-500TWh", "500-1000TWH","1000-1500TWH", "1500-2000TWH","2000-4000TWh", "4000-8000TWh", "8000-10000TWh"), right = TRUE)
+
+# Coal
+country_overview_large$coal_production_2020_cat <- cut(country_overview_large$coal_production_2020, breaks = c(-1, 1, 500, 1000, 3000, 4000, 5000, 10000, 30000),
+                                                       labels = c("No data", "1-500TWh", "500-1000TWH","1000-3000TWH", "3000-4000TWH","4000-5000TWh", "5000-10000TWh", "10000-30000TWh"), right = TRUE)
+
+cv_pal_oil <- colorFactor(palette = c("#EFEFEF", "#F98C09", "#D34743", "#B0325A", "#741A6E", "#4A126B", "#1A0C41", "#00010D"), country_overview_large$oil_production_2020_cat)
+cv_pal_gas <- colorFactor(palette = c("#EFEFEF", "#F98C09", "#D34743", "#B0325A", "#741A6E", "#4A126B", "#1A0C41", "#00010D"), country_overview_large$gas_production_2020_cat)
+cv_pal_coal <- colorFactor(palette = c("#EFEFEF", "#F98C09", "#D34743", "#B0325A", "#741A6E", "#4A126B", "#1A0C41", "#00010D"), country_overview_large$coal_production_2020_cat)
+
+# Factor and label CAT_rating
+#country_overview_large$CAT_rating <- factor(country_overview_large$CAT_rating, levels = c(0,1,2,3,4,5,6,7),
+#labels = c("Critically Insufficient","Highly Insufficient","Insufficient",
+#"2°C Compatible","1.5°C Paris Agreement Compatible", "Role Model","No Rating","No Data"))
+
+# Factor, label, and reorder MTCO2e
+country_overview_large$MTCO2e_cat <- cut(country_overview_large$MTCO2e, breaks = c(-100, -1, 1, 169, 500, 1000, 5000, 10000, 20000),
+                                         labels = c("<0 MTCO2e", "No data", "1-169 MTCO2e", "169-500 MTCO2e", "500-1000 MTCO2e", "1000-5000 MTCO2e",
+                                                    "5000-10000 MTCO2e", ">10000 MTCO2e"), right = FALSE)
+
+country_overview_large$MTCO2e_cat = factor(country_overview_large$MTCO2e_cat,levels(country_overview_large$MTCO2e_cat)[c(2,1,3:8)])
+
+### Pull % Global Emissions to country_overview file via ISO3
+annual_share_of_co2_emissions_2019 <- annual_share_of_co2_emissions %>%
+        filter(Year == 2019)
+
+country_overview_large["global_emissions_percent"] <- annual_share_of_co2_emissions_2019$Share.of.global.CO2.emissions[match(country_overview_large$ISO3,
+                                                                                                                             annual_share_of_co2_emissions_2019$Code)]
+
+### Pull Fossil-Fuel share of primary energy to country_overview file via ISO3 and filter by Year 2019
+fossil_fuels_share_energy_2019 <- fossil_fuels_share_energy %>%
+        filter(Year == 2019)
+
+country_overview_large["fossil_fuel_share_energy_2019"] <- fossil_fuels_share_energy_2019$Fossil.fuels....sub.energy.[match(country_overview_large$ISO3,
+                                                                                                                            fossil_fuels_share_energy_2019$Code)]
+country_overview_large <- country_overview_large %>% replace(is.na(.), 0)
+
+# Factor and label Fossil Fuel share across countries in 2019
+country_overview_large$ff_share_2019_cat <- cut(country_overview_large$fossil_fuel_share_energy_2019, breaks = c(-1, 1, 20, 40, 60, 80, 90, 95, 100),
+                                                labels = c("No data", "1-20%", "20-40%","40-60%", "60-80%","80-90%", "90-95", "95-100%"), right = TRUE)
+
+
+### CO2 Emissions per Country: NEW ADDITION ON 08.10.2021
+## OIL
+# Adjust country names
+co2_oil_annual <- co2_oil_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'United States', replacement = "United States of America")
+})
+
+co2_oil_annual <- co2_oil_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Russia', replacement = "Russian Federation")
+})
+
+co2_oil_annual <- co2_oil_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Iran', replacement = "Iran, Islamic Republic of")
+})
+
+co2_oil_annual <- co2_oil_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Democratic Republic of Congo', replacement = "Congo, (Kinshasa)")
+})
+
+co2_oil_annual <- co2_oil_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'South Korea', replacement = "Korea, (South)")
+})
+
+co2_oil_annual <- co2_oil_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'North Korea', replacement = "Korea, (North)")
+})
+
+co2_oil_annual <- co2_oil_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Tanzania', replacement = "Tanzania, United Republic of")
+})
+
+co2_oil_annual <- co2_oil_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Taiwan', replacement = "Taiwan, Republic of China")
+})
+
+co2_oil_annual <- co2_oil_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Macau', replacement = "Macao, SAR China")
+})
+
+co2_oil_annual <- co2_oil_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Laos', replacement = "Lao PDR")
+})
+
+
+### Pull CO2 EMISSIONS OIL to country_overview file via ISO3 and filter by Year 2019
+co2_oil_annual_2019 <- co2_oil_annual %>%
+        filter(Year == 2019)
+
+# remove regions
+co2_oil_annual_2019 <- co2_oil_annual_2019[-c(2,12,13,61,62,71,72,73,98,151,152,156,191,225), ]
+
+co2_oil_annual_2019 <- co2_oil_annual_2019 %>% replace(is.na(.), 0)
+
+
+### GAS
+# Adjust country names
+co2_gas_annual <- co2_gas_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'United States', replacement = "United States of America")
+})
+
+co2_gas_annual <- co2_gas_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Russia', replacement = "Russian Federation")
+})
+
+co2_gas_annual <- co2_gas_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Iran', replacement = "Iran, Islamic Republic of")
+})
+
+co2_gas_annual <- co2_gas_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Democratic Republic of Congo', replacement = "Congo, (Kinshasa)")
+})
+
+co2_gas_annual <- co2_gas_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'South Korea', replacement = "Korea, (South)")
+})
+
+co2_gas_annual <- co2_gas_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'North Korea', replacement = "Korea, (North)")
+})
+
+co2_gas_annual <- co2_gas_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Tanzania', replacement = "Tanzania, United Republic of")
+})
+
+co2_gas_annual <- co2_gas_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Taiwan', replacement = "Taiwan, Republic of China")
+})
+
+co2_gas_annual <- co2_gas_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Macau', replacement = "Macao, SAR China")
+})
+
+co2_gas_annual <- co2_gas_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Laos', replacement = "Lao PDR")
+})
+
+
+### Pull CO2 EMISSIONS OIL to country_overview file via ISO3 and filter by Year 2019
+co2_gas_annual_2019 <- co2_gas_annual %>%
+        filter(Year == 2019)
+
+# remove regions
+co2_gas_annual_2019 <- co2_gas_annual_2019[-c(2,8,9,39,40,45,46,47,88,89,92,111,134), ]
+
+co2_gas_annual_2019 <- co2_gas_annual_2019 %>% replace(is.na(.), 0)
+
+
+
+## Coal
+# Adjust country names
+co2_coal_annual <- co2_coal_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'United States', replacement = "United States of America")
+})
+
+co2_coal_annual <- co2_coal_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Russia', replacement = "Russian Federation")
+})
+
+co2_coal_annual <- co2_coal_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Iran', replacement = "Iran, Islamic Republic of")
+})
+
+co2_coal_annual <- co2_coal_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Democratic Republic of Congo', replacement = "Congo, (Kinshasa)")
+})
+
+co2_coal_annual <- co2_coal_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'South Korea', replacement = "Korea, (South)")
+})
+
+co2_coal_annual <- co2_coal_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'North Korea', replacement = "Korea, (North)")
+})
+
+co2_coal_annual <- co2_coal_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Tanzania', replacement = "Tanzania, United Republic of")
+})
+
+co2_coal_annual <- co2_coal_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Taiwan', replacement = "Taiwan, Republic of China")
+})
+
+co2_coal_annual <- co2_coal_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Macau', replacement = "Macao, SAR China")
+})
+
+co2_coal_annual <- co2_coal_annual %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Laos', replacement = "Lao PDR")
+})
+
+
+### Pull CO2 EMISSIONS OIL to country_overview file via ISO3 and filter by Year 2019
+co2_coal_annual_2019 <- co2_coal_annual %>%
+        filter(Year == 2019)
+
+# remove regions
+co2_coal_annual_2019 <- co2_coal_annual_2019[-c(2,7,8,35,36,41,42,43,92,93,97,113,133), ]
+
+co2_coal_annual_2019 <- co2_coal_annual_2019 %>% replace(is.na(.), 0)
+
+
+## EDA
+# max(co2_oil_annual_2019$Annual.CO2.emissions.from.oil) # Max 2019 =  2342535570
+# max(co2_gas_annual_2019$Annual.CO2.emissions.from.gas) # Max 2019 = 1706872671
+# max(co2_coal_annual_2019$Annual.CO2.emissions.from.coal) # Max 2019 = 7235953180
+#
+# plot(co2_oil_annual_2019$Annual.CO2.emissions.from.oil)
+# plot(co2_gas_annual_2019$Annual.CO2.emissions.from.gas)
+# plot(co2_coal_annual_2019$Annual.CO2.emissions.from.coal)
+
+
+# Oil
+country_overview_large["co2_oil_annual_2019"] <- co2_oil_annual_2019$Annual.CO2.emissions.from.oil[match(country_overview_large$ISO3,
+                                                                                                         co2_oil_annual_2019$Code)]
+
+# Gas
+country_overview_large["co2_gas_annual_2019"] <- co2_gas_annual_2019$Annual.CO2.emissions.from.gas[match(country_overview_large$ISO3,
+                                                                                                         co2_gas_annual_2019$Code)]
+
+# Coal
+country_overview_large["co2_coal_annual_2019"] <- co2_coal_annual_2019$Annual.CO2.emissions.from.coal[match(country_overview_large$ISO3,
+                                                                                                            co2_coal_annual_2019$Code)]
+
+#country_overview_large[country_overview_large$Country == "China", "co2_coal_annual_2019"]
+
+
+# country_overview_large <- country_overview_large %>% replace(is.na(.), 0)
+
+# Factor and label Fossil Fuel prodcution across countries in 2020
+# Oil
+country_overview_large$co2_oil_annual_2019_cat <- cut(country_overview_large$co2_oil_annual_2019, breaks = c(-1, 1, 5000000, 10000000, 50000000, 100000000, 500000000, 1000000000, 5000000000),
+                                                      labels = c("No data", "1-5 million t", "1-10 million t", "10-50 million t","50-100 million t", "100-500 million t",
+                                                                 "1 billion t", "5 billion t"), right = TRUE)
+
+# Gas
+country_overview_large$co2_gas_annual_2019_cat <- cut(country_overview_large$co2_gas_annual_2019, breaks = c(-1, 1, 5000000, 10000000, 50000000, 100000000, 500000000, 1000000000, 5000000000),
+                                                      labels = c("No data", "1-5 million t", "1-10 million t", "10-50 million t","50-100 million t", "100-500 million t",
+                                                                 "1 billion t", "5 billion t"), right = TRUE)
+
+# Coal
+country_overview_large$co2_coal_annual_2019_cat <- cut(country_overview_large$co2_coal_annual_2019, breaks = c(-1, 1, 5000000, 10000000, 50000000, 100000000, 500000000, 1000000000, 7500000000),
+                                                       labels = c("No data", "1-5 million t", "5-10 million t", "10-50 million t","50-100 million t", "100-500 million t",
+                                                                  "1 billion t", "> 7 billion t"), right = TRUE)
+
+cv_pal_oil_co2 <- colorFactor(palette = c("#EFEFEF", "#F98C09", "#D34743", "#B0325A", "#741A6E", "#4A126B", "#1A0C41", "#00010D"), country_overview_large$co2_oil_annual_2019_cat)
+cv_pal_gas_co2 <- colorFactor(palette = c("#EFEFEF", "#F98C09", "#D34743", "#B0325A", "#741A6E", "#4A126B", "#1A0C41", "#00010D"), country_overview_large$co2_gas_annual_2019_cat)
+cv_pal_coal_co2 <- colorFactor(palette = c("#EFEFEF", "#F98C09", "#D34743", "#B0325A", "#741A6E", "#4A126B", "#1A0C41", "#00010D"), country_overview_large$co2_coal_annual_2019_cat)
+
+
+### NEW DATA PROCESSING 08.10.2021: CO2 Emissions (gas, coal, and oil) converting Year from numeric to date format###
+co2_oil_annual$Date <-lubridate::ymd(co2_oil_annual$Year, truncated = 2L)
+co2_gas_annual$Date <-lubridate::ymd(co2_gas_annual$Year, truncated = 2L)
+co2_coal_annual$Date <-lubridate::ymd(co2_coal_annual$Year, truncated = 2L)
+
+# extract dates from oil production data
+co2_oil_annual$date = as.Date(co2_oil_annual$Date, format="%d/%m/%Y")
+co2_oil_annual_min_date = min(co2_oil_annual$date)
+co2_oil_annual_max_date = max(co2_oil_annual$date)
+co2_oil_annual_max_date_clean = format(as.POSIXct(co2_oil_annual_max_date),"%d/%m/%Y")
+
+# extract dates from gas production data
+co2_gas_annual$date = as.Date(co2_gas_annual$Date, format="%d/%m/%Y")
+co2_gas_annual_min_date = min(co2_gas_annual$date)
+co2_gas_annual_max_date = max(co2_gas_annual$date)
+co2_gas_annual_max_date_clean = format(as.POSIXct(co2_gas_annual_max_date),"%d/%m/%Y")
+
+# extract dates from mcoal production data
+co2_coal_annual$date = as.Date(co2_coal_annual$Date, format="%d/%m/%Y")
+co2_coal_annual_min_date = min(co2_coal_annual$date)
+co2_coal_annual_max_date = max(co2_coal_annual$date)
+co2_coal_annual_max_date_clean = format(as.POSIXct(co2_coal_annual_max_date),"%d/%m/%Y")
+
+
+
+### DATA PROCESSING: Policies converting Year from numeric to date format###
+moratoria_bans_limits$Date <-lubridate::ymd(moratoria_bans_limits$Start, truncated = 2L)
+subsidy_removal$Date <-lubridate::ymd(subsidy_removal$Start, truncated = 2L)
+divestment_new$Date <-lubridate::ymd(divestment_new$Start, truncated = 2L)
+
+# extract dates from moratoria_bans_limits data
+moratoria_bans_limits$date = as.Date(moratoria_bans_limits$Date, format="%d/%m/%Y")
+moratoria_bans_limits_min_date = min(moratoria_bans_limits$date)
+moratoria_bans_limits_max_date = max(moratoria_bans_limits$date)
+moratoria_bans_limits_max_date_clean = format(as.POSIXct(moratoria_bans_limits_max_date),"%d/%m/%Y")
+
+# extract dates from subsidy removaldata
+subsidy_removal$date = as.Date(subsidy_removal$Date, format="%d/%m/%Y")
+subsidy_removal_min_date = min(subsidy_removal$date)
+subsidy_removal_max_date = max(subsidy_removal$date)
+subsidy_removal_max_date_clean = format(as.POSIXct(subsidy_removal_max_date),"%d/%m/%Y")
+
+# extract dates from divestment data
+divestment_new$date = as.Date(divestment_new$Date, format="%d/%m/%Y")
+divestment_min_date = min(divestment_new$date)
+divestment_max_date = max(divestment_new$date)
+divestment_max_date_clean = format(as.POSIXct(divestment_max_date),"%d/%m/%Y")
+
+
+# Clean oil, gas, coal country names
+# Oil
+oil_production <- oil_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'United States', replacement = "United States of America")
+})
+
+oil_production <- oil_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Russia', replacement = "Russian Federation")
+})
+
+oil_production <- oil_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Iran', replacement = "Iran, Islamic Republic of")
+})
+
+oil_production <- oil_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Democratic Republic of Congo', replacement = "Congo, (Kinshasa)")
+})
+
+oil_production <- oil_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'South Korea', replacement = "Korea, (South)")
+})
+
+oil_production <- oil_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'North Korea', replacement = "Korea, (North)")
+})
+
+oil_production <- oil_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Tanzania', replacement = "Tanzania, United Republic of")
+})
+
+oil_production <- oil_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Taiwan', replacement = "Taiwan, Republic of China")
+})
+
+oil_production <- oil_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Macau', replacement = "Macao, SAR China")
+})
+
+oil_production <- oil_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Laos', replacement = "Lao PDR")
+})
+
+# Gas
+gas_production <- gas_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'United States', replacement = "United States of America")
+})
+
+gas_production <- gas_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Russia', replacement = "Russian Federation")
+})
+
+gas_production <- gas_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Iran', replacement = "Iran, Islamic Republic of")
+})
+
+gas_production <- gas_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Democratic Republic of Congo', replacement = "Congo, (Kinshasa)")
+})
+
+gas_production <- gas_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'South Korea', replacement = "Korea, (South)")
+})
+
+gas_production <- gas_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'North Korea', replacement = "Korea, (North)")
+})
+
+gas_production <- gas_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Tanzania', replacement = "Tanzania, United Republic of")
+})
+
+gas_production <- gas_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Taiwan', replacement = "Taiwan, Republic of China")
+})
+
+gas_production <- gas_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Macau', replacement = "Macao, SAR China")
+})
+
+gas_production <- gas_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Laos', replacement = "Lao PDR")
+})
+
+# Coal
+coal_production <- coal_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'United States', replacement = "United States of America")
+})
+
+coal_production <- coal_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Russia', replacement = "Russian Federation")
+})
+
+coal_production <- coal_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Iran', replacement = "Iran, Islamic Republic of")
+})
+
+coal_production <- coal_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Democratic Republic of Congo', replacement = "Congo, (Kinshasa)")
+})
+
+coal_production <- coal_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'South Korea', replacement = "Korea, (South)")
+})
+
+coal_production <- coal_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'North Korea', replacement = "Korea, (North)")
+})
+
+coal_production <- coal_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Tanzania', replacement = "Tanzania, United Republic of")
+})
+
+coal_production <- coal_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Taiwan', replacement = "Taiwan, Republic of China")
+})
+
+coal_production <- coal_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Macau', replacement = "Macao, SAR China")
+})
+
+coal_production <- coal_production %>% mutate_at(1, function(t) {
+        str_replace(t, pattern = 'Laos', replacement = "Lao PDR")
+})
+
+### DATA PROCESSING: Fossil Fuel Production (gas, coal, and oil) converting Year from numeric to date format###
+oil_production$Date <-lubridate::ymd(oil_production$Year, truncated = 2L)
+gas_production$Date <-lubridate::ymd(gas_production$Year, truncated = 2L)
+coal_production$Date <-lubridate::ymd(coal_production$Year, truncated = 2L)
+
+# extract dates from oil production data
+oil_production$date = as.Date(oil_production$Date, format="%d/%m/%Y")
+oil_production_min_date = min(oil_production$date)
+oil_production_max_date = max(oil_production$date)
+oil_production_max_date_clean = format(as.POSIXct(oil_production_max_date),"%d/%m/%Y")
+
+# extract dates from gas production data
+gas_production$date = as.Date(gas_production$Date, format="%d/%m/%Y")
+gas_production_min_date = min(gas_production$date)
+gas_production_max_date = max(gas_production$date)
+gas_production_max_date_clean = format(as.POSIXct(gas_production_max_date),"%d/%m/%Y")
+
+# extract dates from mcoal production data
+coal_production$date = as.Date(coal_production$Date, format="%d/%m/%Y")
+coal_production_min_date = min(coal_production$date)
+coal_production_max_date = max(coal_production$date)
+coal_production_max_date_clean = format(as.POSIXct(coal_production_max_date),"%d/%m/%Y")
+
+
+# write files without dockerization:
+# write country_overview_large file
+write.csv(country_overview_large, file = "src/input_data/country_overview_large.csv")
+
+# write state_city_breakdown_map file
+write.csv(state_city_breakdown_map, file = "src/input_data/state_city_breakdown_map.csv")
+
+# write policy files
+write.csv(moratoria_bans_limits, file = "src/input_data/moratoria_bans_limits.csv")
+write.csv(divestment_new, file = "src/input_data/divestment_new.csv")
+#write.csv(divestment_new, file = "src/input_data/divestment.csv")
+write.csv(subsidy_removal, file = "src/input_data/subsidy_removal.csv")
+
+# oil_production, gas_production, coal_production files
+write.csv(oil_production, file = "src/input_data/oil_production.csv")
+write.csv(gas_production, file = "src/input_data/gas_production.csv")
+write.csv(coal_production, file = "src/input_data/coal_production.csv")
+
+# read in ff data with lubridated times
+oil_production1 = read.csv("src/input_data/oil_production.csv")
+gas_production1 = read.csv("src/input_data/gas_production.csv")
+coal_production1 = read.csv("src/input_data/coal_production.csv")
+
+# create one file for ff data
+write.csv(coal_production1, file = "src/input_data/fossil_fuel_production.csv")
+
+# create and save one file with oil, gas, coal production data: fossil_fuel_production.csv
+fossil_fuel_production <- read.csv("src/input_data/fossil_fuel_production.csv")
+
+
+
+# # write files with dockerization:
+# # write country_overview_large file
+# write.csv(country_overview_large, file = "input_data/country_overview_large.csv")
+# 
+# # write state_city_breakdown_map file
+# write.csv(state_city_breakdown_map, file = "input_data/state_city_breakdown_map.csv")
+# 
+# # write policy files
+# write.csv(moratoria_bans_limits, file = "input_data/moratoria_bans_limits.csv")
+# write.csv(divestment_new, file = "input_data/divestment_new.csv")
+# write.csv(divestment, file = "input_data/divestment.csv")
+# write.csv(subsidy_removal, file = "input_data/subsidy_removal.csv")
+# 
+# # oil_production, gas_production, coal_production files
+# write.csv(oil_production, file = "input_data/oil_production.csv")
+# write.csv(gas_production, file = "input_data/gas_production.csv")
+# write.csv(coal_production, file = "input_data/coal_production.csv")
+# 
+# # read in ff data with lubridated times
+# oil_production1 = read.csv("input_data/oil_production.csv")
+# gas_production1 = read.csv("input_data/gas_production.csv")
+# coal_production1 = read.csv("input_data/coal_production.csv")
+# 
+# # create one file for ff data
+# write.csv(coal_production1, file = "input_data/fossil_fuel_production.csv")
+# 
+# # create and save one file with oil, gas, coal production data: fossil_fuel_production.csv
+# fossil_fuel_production <- read.csv("input_data/fossil_fuel_production.csv")
+
+
+# Drop X columns
+fossil_fuel_production$X.1 <- NULL
+fossil_fuel_production$X <- NULL
+
+fossil_fuel_production <- fossil_fuel_production %>% full_join(gas_production1, by=c("Entity","Year","Code","Date","date"))
+fossil_fuel_production <- fossil_fuel_production %>% full_join(oil_production1, by=c("Entity","Year","Code","Date","date"))
+
+# Drop X columns
+fossil_fuel_production$X.x <- NULL
+fossil_fuel_production$X.y <- NULL
+
+# Replace NAs
+# fossil_fuel_production <- fossil_fuel_production %>% replace(is.na(.), 0)
+
+# # Save fossil fuel file (without Dockerization)
+# write.csv(fossil_fuel_production, file = "src/input_data/fossil_fuel_production.csv")
+
+# Save fossil fuel file (with Dockerization)
+write.csv(fossil_fuel_production, file = "src/input_data/fossil_fuel_production.csv")
+
+# #Set Main Plot output
+# policy_count = function(country_overview_large){
+#     x <- sum(country_overview_large$Policy_total)
+#     print(x)
+# }
+#
+# mbl_count = function(country_overview_large){
+#     x <- sum(country_overview_large$Moratoria_bans_limits_total)
+#     x
+# }
+#
+# sr_count = function(country_overview_large){
+#     x <- sum(country_overview_large$Subsidy_removal_total)
+#     x
+# }
+#
+# div_count = function(country_overview_large){
+#     x <- sum(country_overview_large$Divestment_total)
+#     x
+# }
+#
+# gov_pol_count = function(country_overview_large){
+#     x <- sum(country_overview_large$Government_policies_total)
+#     x
+# }
+#
+# Non_gov_pol_count = function(country_overview_large){
+#     x <- sum(country_overview_large$Non_Government_policies_total)
+#     x
+# }
+
+# ### MAP FUNCTIONS ###
+# # function to plot cumulative Moratoria, Bans, and Limit Policies by date
+# cumulative_mbl_plot = function(moratoria_bans_limits) {
+#     g1 <- ggplot(moratoria_bans_limits, aes(x = date, y = Policy)) +
+#         geom_bar(position="stack", stat="identity", fill = Moratoria_bans_limits) +
+#         ylab("Moratoria, Bans, & Limit Policies") +  xlab("Year") + theme_bw() + ylim(0,30) +
+#         scale_fill_manual(values=c(Moratoria_bans_limits)) +
+#         xlim(c(moratoria_bans_limits_min_date,moratoria_bans_limits_max_date)) +
+#         scale_x_date(date_labels = "%Y", limits=c(moratoria_bans_limits_min_date,moratoria_bans_limits_max_date)) +
+#         theme(legend.title = element_blank(), legend.position = "", plot.title = element_text(size=10),
+#               plot.margin = margin(5, 10, 5, 5))
+#     g1
+# }
+#
+# # function to plot cumulative Divestments by date
+# cumulative_div_plot = function(divestment_new) {
+#     g2 <- ggplot(divestment_new, aes(x = date, y = Policy)) +
+#         geom_bar(position="stack", stat="identity", fill = Divestment) +
+#         ylab("Divestments") +  xlab("Year") + theme_bw() + ylim(0,300) +
+#         scale_fill_manual(values=c(Divestment)) +
+#         xlim(c(divestment_min_date,divestment_max_date)) +
+#         scale_x_date(date_labels = "%Y", limits=c(divestment_min_date,divestment_max_date)) +
+#         theme(legend.title = element_blank(), legend.position = "", plot.title = element_text(size=10),
+#               plot.margin = margin(5, 10, 5, 5))
+#     g2
+# }
+#
+# # function to plot cumulative subsidy_removal by date
+# cumulative_sr_plot = function(subsidy_removal) {
+#     g3 <- ggplot(subsidy_removal, aes(x = date, y = Policy)) +
+#         geom_bar(position="stack", stat="identity", fill = Subsidy_removal) +
+#         ylab("Subsidy Removals") +  xlab("Year") + theme_bw() + ylim(0,8) +
+#         scale_fill_manual(values=c(Subsidy_removal)) +
+#         xlim(c(subsidy_removal_min_date,subsidy_removal_max_date)) +
+#         scale_x_date(date_labels = "%Y", limits=c(subsidy_removal_min_date,subsidy_removal_max_date)) +
+#         theme(legend.title = element_blank(), legend.position = "", plot.title = element_text(size=10),
+#               plot.margin = margin(5, 10, 5, 5))
+#     g3
+# }
+
+
+## create plotting parameters for map
+# Define color palette for polygons (viridis: https://www.thinkingondata.com/something-about-viridis-library/)
+#cv_pal <- colorFactor(palette = c("#FF0D0D","#FF4E11", "#FF8E15", "#FAB733", "#ACB334", "#69B34C", "#B1B6B9"), country_overview_large$CAT_rating)  ### Alternative baseline
+#cv_pal <- colorFactor(palette = c("#EFEFEF", "#FCDE9C", "#BEC5A9", "#8DA8AD", "#668BA8", "#466A9F", "#2C4B93", "#062A89"), country_overview_large$ff_share_2019_cat)
+# Viridis
+#cv_pal <- colorFactor(palette = c("#EFEFEF", "#95D840FF", "#3CBB75FF", "#287D8EFF", "#33638DFF", "#404788FF", "#482677FF", "#440154FF"), country_overview_large$ff_share_2019_cat)
+# Inferno
+cv_pal <- colorFactor(palette = c("#EFEFEF", "#F98C09", "#D34743", "#B0325A", "#741A6E", "#4A126B", "#1A0C41", "#00010D"), country_overview_large$ff_share_2019_cat)
+plot_map <- worldcountry[worldcountry$ADM0_A3 %in% country_overview_large$ISO3, ]
+# plot_map <- rmapshaper::ms_simplify(plot_map)
+
+## Filter data for mapping by selecting only rows with policies > 0 for polygons and some circles
+country_overview_large_map = country_overview_large %>% filter(Government_policies_total >= 1 | Non_Government_policies_total >= 1)
+
+# Filter data for mapping by selecting only rows with policies > 0 for state_city_breakdown
+state_city_breakdown_map_ffnpt = state_city_breakdown_map %>% filter(ffnpt_total > 0)
+
+# Define object for Logo with FF NPT Logo
+logo <- a(href = "https://fossilfueltreaty.org", target="_blank", img(src = "output-onlinepngtools.png", alt = "FFNPT", height='90px',width='90px'))
+
+# # Reload data sheets for image file to render well in app.R
+# country_overview_large = read.csv("input_data/country_overview_large.csv")
+# state_city_breakdown_map = read.csv("input_data/state_city_breakdown_map.csv")
+
+# Code to integrate toggling between choropleths with individual Legends
+# Source code: https://gis.stackexchange.com/questions/214773/how-to-hide-toggle-legends-with-layer-controls-in-leaflet-for-r​
+# Changes done to PreprocessingScirpt.R​
+
+# components without Dockerization
+source("src/components/cards.R")
+source("src/components/maps.R")
+
+# source("src/pages/introduction.R")
+source("src/pages/policy_overview.R")
+source("src/pages/country_profiles.R")
+# source("src/pages/about.R")
+source("src/pages/download.R")
+
+# # components with Dockerization
+# source("components/cards.R")
+# source("components/maps.R")
+# 
+# # source("pages/introduction.R")
+# source("pages/policy_overview.R")
+# source("pages/country_profiles.R")
+# # source("pages/about.R")
+
+# Save image (without Dockerization)
+save.image("src/image.RData")
+
+# # Save image (with Dockerization)
+# save.image("image.RData")
+
+#load("src/image.RData")

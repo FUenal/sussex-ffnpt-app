@@ -1,0 +1,169 @@
+.ui.sidebar.menu.sidebar-menu {
+  background-color: $blue;
+  border: none;
+  display: grid;
+  grid-template-columns: 1fr repeat(5, 240px);
+  height: $header-height !important;
+  width: 100%;
+  z-index: 1002;
+
+  a img {
+    height: 76px;
+    margin-left: 30px;
+  }
+
+  @media only screen and (max-width: $media-tablet) {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  @media only screen and (max-width: $media-mobile) {
+
+    & {
+      align-items: center;
+      display: flex;
+      flex-direction: column;
+      height: 100% !important;
+      padding-top: 150px;
+      transform: translateY(-100%);
+      transition:
+        transform $mobile-transition $menu-transition,
+        visibility 0s $mobile-transition + $menu-transition;
+      visibility: hidden;
+
+      &--visible {
+        transform: translateY(0);
+        transition: transform $mobile-transition, visibility 0s;
+        visibility: visible;
+      }
+    }
+  }
+
+  .logo {
+    display: none;
+  }
+
+  & > .item {
+    align-items: center;
+    justify-content: center;
+    border: none;
+    color: #fff;
+    display: flex;
+    fill: #fff;
+    font-size: 1rem;
+    font-weight: bold;
+    padding: 20px;
+    position: relative;
+
+    .sidebar-icon {
+      width: 30px;
+      margin-right: 15px;
+    }
+
+    &::before {
+      content: "";
+      background-color: $teal;
+      bottom: 0;
+      height: 8px;
+      left: 0;
+      position: absolute;
+      top: auto;
+      transform: scaleX(0);
+      transition: transform $menu-transition;
+      width: 100%;
+    }
+
+    &:hover {
+      background-color: $blue-dark;
+    }
+
+    &.active {
+      color: $teal;
+      fill: $teal;
+      background-color: $blue-dark;
+
+      &::before {
+        transform: scaleX(1);
+      }
+    }
+
+    @media only screen and (max-width: $media-mobile) {
+      padding-left: calc((100% - 180px) / 2);
+      width: 100%;
+
+      &::before {
+        height: 4px;
+      }
+    }
+  }
+}
+
+.logo {
+  @include flex-center;
+  color: #fff;
+  font-size: 2.5rem;
+  font-weight: bold;
+  height: $header-height;
+  max-width: 250px;
+  padding: 0 50px;
+  transition: color $hover-transition;
+
+  @media only screen and (max-width: $media-tablet) {
+    justify-self: center;
+    grid-column: 1 / 5;
+  }
+
+  &--color {
+    color: $teal;
+  }
+
+  &:hover, &:focus {
+    color: $teal;
+  }
+}
+
+.mobile-header {
+  background-color: $blue;
+  display: none;
+  justify-content: space-between;
+  height: $header-height-mobile;
+  left: 0;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1003;
+
+  @media only screen and (max-width: $media-mobile) {
+    display: flex;
+  }
+
+  .logo {
+    font-size: 2rem;
+    height: $header-height-mobile;
+    padding: 0 20px;
+  }
+
+  // override semantic button with icon
+  &__button {
+    align-items: center !important;
+    background: none !important;
+    border: none !important;
+    color: #fff !important;
+    display: flex !important;
+    font-size: 2rem !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    margin-right: 20px !important;
+    outline: none;
+    padding: 0 !important;
+    transform: scaleX(1) !important;
+    transition: transform $mobile-transition !important;
+
+    .icon {
+      margin: 0 !important;
+    }
+
+    &--active {
+      transform: scaleX(-1) !important;
+    }
+  }
+}

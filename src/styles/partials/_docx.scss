@@ -1,0 +1,71 @@
+/* div[data-tab="introduction"], */
+div[data-tab="how_to"],
+div[data-tab="about"] {
+  img {
+    display: block;
+    margin: 0 auto;
+    width: 100%;
+    height: auto !important;
+    max-width: 100%;
+    border: 1px solid #253550;
+    box-shadow: 1px 1px 5px #2535507a;
+  }
+
+  & > div {
+    max-width: 1350px;
+  }
+
+  h2 {
+    text-align: center;
+    font-size: 2.6rem;
+    margin: 15vh 5vw 15vh 5vw;
+    line-height: 4rem;
+    color: #151e2d;
+    font-weight: bold;
+  }
+
+  h3 {
+    color: #151e2d;
+    text-align: center;
+    margin: 5rem 5vw 2rem 5vw;
+    line-height: 2.2rem;
+    font-size: 2.0rem;
+  }
+
+  h4 {
+    font-size: 1.8rem;
+    margin-top: 8rem;
+    /* text-decoration: underline;     */
+  }
+
+  a {
+    color: #c87200;
+  }
+
+  p {
+    color: #151e2d;
+    font-size: 1.2rem;
+
+    strong {
+      text-decoration: underline;
+    }
+  }
+
+  ul {
+    margin: 30px 0;
+    li {
+      margin: 10px;
+    }
+  }
+
+  ol {
+    font-size: 130%;
+    margin: 40px 0 15px 0;
+    color: #151e2d;
+    border-bottom: 2px solid;
+
+    strong {
+      text-decoration: none;
+    }
+  }
+}

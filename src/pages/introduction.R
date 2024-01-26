@@ -201,7 +201,7 @@ introduction_ui <- function() {
       class = "intro__sources",
       HTML("
      <b>Programming, AI & Design</b>:<br/>
-          Dr. Fatih Uenal - <a href = 'https://dataist.netlify.app/' target='_blank'> The Dataist </a><br/><br/>
+          Dr. Fatih Uenal - <a href = 'https://dataiq.netlify.app/' target='_blank'> DataIQ </a><br/><br/>
      <b>Data, Methodology & Research</b>:<br/>
           Frederick Daley - <a href = 'https://uk.linkedin.com/in/freddie-daley-422908103' target='_blank'> University of Sussex </a>
       ")

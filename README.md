@@ -10,7 +10,7 @@ The Shiny app, will be launched on 19th March 2021, aims to complement existing 
 
 Follow [this]( https://fuenal.shinyapps.io/Fossil_Fuel_Policy_Tracker/) link for the interactive Shiny app. A screenshot of the interface is provided below.
 
-![Shiny app interface](src/www/app_image.png) 
+![Shiny app interface](src/www/tracker-app.jpg) 
 
 ## Analysis code
 
@@ -90,7 +90,7 @@ sudo docker-compose down
 ```
 
 ## Author
-Dr Fatih Uenal, Fellow @ Faculty AI & University of Cambridge
+Dr Fatih Uenal, Senior Data Scientist - [DATAIQ](https://dataiq.netlify.app/)
 
 ## Contact
 mars.fatih@gmail.com

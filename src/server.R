@@ -34,7 +34,10 @@ server = function(input, output, session) {
       })
 
       output$policy_count <- renderUI({
-        paste0(sum(country_overview_large$Policy_total))
+        paste0(sum(country_overview_large$Moratoria_bans_limits_total) +
+               sum(country_overview_large$Subsidy_removal_total) +
+               sum(country_overview_large$Divestment_total) +
+               sum(state_city_breakdown_map$FFNPT))
       })
       output$gov_pol_count <- renderUI({
         paste0(prettyNum(sum(country_overview_large$Government_policies_total), big.mark=","))
@@ -43,11 +46,13 @@ server = function(input, output, session) {
         paste0(prettyNum(sum(country_overview_large$Divestment_total), big.mark=","))
       })
       output$ffnpt_total_count <- renderUI({
-        paste0(prettyNum(sum(country_overview_large$treaty_total), big.mark=","))
+        paste0(prettyNum(sum(state_city_breakdown_map$FFNPT), big.mark=","))
       })      
     })
 
+    # REFACTORED: Consolidated 4 separate observeEvent handlers into 1 (was lines 50, 568, 598, 627)
     observeEvent(input$tab_download, {
+      # KPI counts
       output$mbl_count1 <- renderUI({
         paste0(prettyNum(sum(country_overview_large$Moratoria_bans_limits_total), big.mark=","))
       })
@@ -57,6 +62,46 @@ server = function(input, output, session) {
       output$div_count1 <- renderUI({
         paste0(prettyNum(sum(country_overview_large$Divestment_total), big.mark=","))
       })
+
+      # DataTable 4 - Moratoria, Bans, Limits
+      output$dataTable4 <- DT::renderDataTable(server=FALSE, DT::datatable({
+        moratoria_bans_limits %>%
+          group_by(City_state_or_province) %>%
+          select(c("City_state_or_province", "Category", "Fuel_type", "Fuel_subtype", "Sources_and_more_info")) %>%
+          mutate(Sources_and_more_info = parseURL(Sources_and_more_info)) %>%
+          rename("Jurisdiction" = "City_state_or_province", "Fuel type" = "Fuel_type", "Fuel subtype" = "Fuel_subtype", "Sources" = "Sources_and_more_info") %>%
+          replace(is.na(.), "---")
+      },
+      extensions = 'Buttons',
+      filter = list(position = 'top', clear = FALSE, plain = TRUE),
+      options = list(paging = TRUE, scrollX=TRUE, searching = TRUE, ordering = TRUE, fixedColumns = TRUE, autoWidth = TRUE, dom = 'Bfrtip', buttons = c('copy', 'csv', 'excel'), pageLength=5, lengthMenu=c(5,10,15)),
+      escape = FALSE, class = "display"))
+
+      # DataTable 5 - Subsidy Removal
+      output$dataTable5 <- DT::renderDataTable(server=FALSE, DT::datatable({
+        subsidy_removal %>%
+          group_by(Country) %>%
+          select(c("Country", "Category", "Fuel_type", "Fuel_subtype", "Start", "Sources_and_more_info")) %>%
+          rename("Jurisdiction" = "Country", "Fuel type" = "Fuel_type", "Fuel subtype" = "Fuel_subtype", "Sources" = "Sources_and_more_info") %>%
+          replace(is.na(.), "---")
+      },
+      extensions = 'Buttons',
+      filter = list(position = 'top', clear = FALSE, plain = TRUE),
+      options = list(paging = TRUE, scrollX=TRUE, searching = TRUE, ordering = TRUE, fixedColumns = TRUE, autoWidth = TRUE, dom = 'Bfrtip', buttons = c('copy', 'csv', 'excel'), pageLength=5, lengthMenu=c(5,10,15)),
+      escape = FALSE, class = "display"))
+
+      # DataTable 6 - Divestment
+      output$dataTable6 <- DT::renderDataTable(server=FALSE, DT::datatable({
+        divestment_new %>%
+          group_by(Country) %>%
+          select(c("Country", "City", "Type", "Organisation", "Organisation_type", "Sources_and_more_info")) %>%
+          rename("Jurisdiction" = "Country", "Organisation type" = "Organisation_type", "Sources" = "Sources_and_more_info") %>%
+          replace(is.na(.), "---")
+      },
+      extensions = 'Buttons',
+      filter = list(position = 'top', clear = FALSE, plain = TRUE),
+      options = list(paging = TRUE, scrollX=TRUE, searching = TRUE, ordering = TRUE, fixedColumns = TRUE, autoWidth = TRUE, dom = 'Bfrtip', buttons = c('copy', 'csv', 'excel'), pageLength=5, lengthMenu=c(5,10,15)),
+      escape = FALSE, class = "display"))
     })
     
     observeEvent(input$tab_policy_overview, {
@@ -565,93 +610,7 @@ server = function(input, output, session) {
       class = "display"))
     })
     
-    observeEvent(input$tab_download, {
-      output$dataTable4 <- DT::renderDataTable(server=FALSE, DT::datatable({
-        moratoria_bans_limitsDF1 <- moratoria_bans_limits
-        moratoria_bans_limitsDF1 %>%
-          group_by(City_state_or_province) %>%
-          select(c("City_state_or_province", "Category", "Fuel_type", "Fuel_subtype", "Sources_and_more_info")) %>% # "Start", "End",
-          mutate(Sources_and_more_info = parseURL(Sources_and_more_info)) %>%
-          rename("Jurisdiction" = "City_state_or_province",  "Fuel type" = "Fuel_type", "Fuel subtype" = "Fuel_subtype", "Sources" = "Sources_and_more_info") %>%
-          # mutate(Sources = sprintf(paste0('<a href="', moratoria_bans_limits$Sources,'" target="_blank" class="btn btn-primary">Link</a>'))) %>% 
-          replace(is.na(.), "---") 
-      },
-      extensions = 'Buttons',
-      filter = list(position = 'top', clear = FALSE, plain = TRUE),
-      options = list(
-        paging = TRUE,
-        scrollX=TRUE, 
-        searching = TRUE,
-        ordering = TRUE,
-        fixedColumns = TRUE, 
-        autoWidth = TRUE,
-        dom = 'Bfrtip',
-        buttons = c('copy', 'csv', 'excel'),
-        pageLength=5, 
-        lengthMenu=c(5,10,15)
-      ),
-      escape = FALSE,
-      class = "display"))
-    })
-    
-    
-    observeEvent(input$tab_download, {
-      output$dataTable5 <- DT::renderDataTable(server=FALSE, DT::datatable({
-        subsidy_removalDF1 <- subsidy_removal
-        subsidy_removalDF1 %>%
-          group_by(Country) %>%
-          select(c("Country", "Category", "Fuel_type", "Fuel_subtype", "Start", "Sources_and_more_info")) %>% # "Description",
-          #mutate(Sources_and_more_info = parseURL(Sources_and_more_info)) %>%
-          rename("Jurisdiction" = "Country", "Fuel type" = "Fuel_type", "Fuel subtype" = "Fuel_subtype", "Sources" = "Sources_and_more_info") %>%
-          replace(is.na(.), "---")
-      },
-      extensions = 'Buttons',
-      filter = list(position = 'top', clear = FALSE, plain = TRUE),
-      options = list(
-        paging = TRUE,
-        scrollX=TRUE, 
-        searching = TRUE,
-        ordering = TRUE,
-        fixedColumns = TRUE, 
-        autoWidth = TRUE,
-        dom = 'Bfrtip',
-        buttons = c('copy', 'csv', 'excel'),
-        pageLength=5, 
-        lengthMenu=c(5,10,15)
-      ),
-      escape = FALSE,
-      class = "display"))
-    })
-    
-    
-    observeEvent(input$tab_download, {
-      output$dataTable6 <- DT::renderDataTable(server=FALSE, DT::datatable({
-        divestmentDFN1 <- divestment_new
-        divestmentDFN1 %>%
-          group_by(Country) %>%
-          select(c("Country", "City", "Type", "Organisation", "Organisation_type", "Sources_and_more_info")) %>%
-          # mutate(Sources_and_more_info = parseURL(Sources_and_more_info)) %>%
-          rename("Jurisdiction" = "Country", "Organisation type" = "Organisation_type", "Sources" = "Sources_and_more_info") %>%
-          replace(is.na(.), "---")
-      },
-      extensions = 'Buttons',
-      filter = list(position = 'top', clear = FALSE, plain = TRUE),
-      options = list(
-        paging = TRUE,
-        scrollX=TRUE, 
-        searching = TRUE,
-        ordering = TRUE,
-        fixedColumns = TRUE, 
-        autoWidth = TRUE,
-        dom = 'Bfrtip',
-        buttons = c('copy', 'csv', 'excel'),
-        pageLength=5, 
-        lengthMenu=c(5,10,15)
-      ),
-      escape = FALSE,
-      class = "display"))
-    })
-    
+    # NOTE: dataTable4, dataTable5, dataTable6 moved to consolidated observeEvent above
 
     observeEvent(input$tab_ffp, {
       # # country-specific plots
@@ -975,6 +934,11 @@ server = function(input, output, session) {
     observe({
         autoInvalidate()
         cat(".")
+    })
+
+    # Session cleanup - free memory when user disconnects
+    session$onSessionEnded(function() {
+        gc()
     })
 
 }

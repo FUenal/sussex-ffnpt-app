@@ -1,4 +1,4 @@
-FROM rocker/shiny-verse:4.0.3
+FROM rocker/shiny-verse:4.3.2
 
 ## install debian packages
 RUN apt-get update -qq && \
@@ -21,7 +21,8 @@ RUN apt-get update -qq && \
     libssl-dev \
     build-essential \
     libglpk40 \
-    littler && \
+    littler \
+    cron && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/
 
@@ -40,7 +41,11 @@ RUN install2.r --error \
     data.table \
     DT \
     shinyjs \
-    shiny.semantic
+    shiny.semantic \
+    sass \
+    googlesheets4 \
+    gargle \
+    lubridate
 
 # copy the app to the image
 COPY app.R /srv/shiny-server/

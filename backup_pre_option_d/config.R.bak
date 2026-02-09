@@ -1,0 +1,74 @@
+#' ============================================================================
+#' FFNPT Tracker Configuration File
+#' ============================================================================
+#'
+#' This file contains settings that can be easily updated by non-technical users.
+#'
+#' HOW TO UPDATE:
+#' 1. Open this file in any text editor (TextEdit, Notepad, etc.)
+#' 2. Change the values below (keep the quotes around dates/text)
+#' 3. Save the file
+#' 4. Restart the app for changes to take effect
+#'
+#' ============================================================================
+
+# =============================================================================
+# LAST UPDATED DATE
+# =============================================================================
+# This date appears on the About page
+# Format: "DD/MM/YY" (day/month/year)
+# Example: "16/01/24" means January 16, 2024
+
+APP_LAST_UPDATED <- "16/01/24"
+
+# =============================================================================
+# DEFAULT COUNTRY
+# =============================================================================
+# The country shown when the app first loads
+# Must match exactly a country name in the data (e.g., "United Kingdom", "Germany")
+
+APP_DEFAULT_COUNTRY <- "United Kingdom"
+
+# =============================================================================
+# DATA SOURCE SETTINGS
+# =============================================================================
+# Set to TRUE to enable automatic data refresh from Google Sheets
+# Set to FALSE to use only local CSV files
+
+ENABLE_GOOGLE_SHEETS_SYNC <- FALSE
+
+# Google Sheets URLs (only used if ENABLE_GOOGLE_SHEETS_SYNC is TRUE)
+# Main data sheet (converted from FF NPT Tracker DRAFT WIP.xlsx)
+GOOGLE_SHEET_MAIN_DATA <- ""  # <-- PASTE YOUR GOOGLE SHEET URL HERE
+
+# Legacy sheets (kept for reference, not actively used)
+# GOOGLE_SHEET_DIVESTMENT <- "https://docs.google.com/spreadsheets/d/1zJjQjmYrDRvDMU0eAZ_ZYe28Dvp2RuEH-GzEwSbhm1w/"
+# GOOGLE_SHEET_CROWDSOURCED <- "https://docs.google.com/spreadsheets/d/1fPzJdaYUXAquqCap-ssR1yOvCcfC-254lieUsJRoan8/"
+
+# =============================================================================
+# CONTACT INFORMATION
+# =============================================================================
+# Displayed in the About section
+
+CONTACT_EMAIL <- "info@fossilfueltracker.org"
+CONTACT_WEBSITE <- "https://fossilfueltreaty.org"
+
+# =============================================================================
+# DO NOT EDIT BELOW THIS LINE
+# =============================================================================
+
+# Function to get config values (used by other R files)
+get_config <- function(key) {
+  switch(key,
+    "last_updated" = APP_LAST_UPDATED,
+    "default_country" = APP_DEFAULT_COUNTRY,
+    "enable_sheets" = ENABLE_GOOGLE_SHEETS_SYNC,
+    "sheet_main" = GOOGLE_SHEET_MAIN_DATA,
+    "contact_email" = CONTACT_EMAIL,
+    "contact_website" = CONTACT_WEBSITE,
+    NULL
+  )
+}
+
+# Print confirmation when loaded
+message("Config loaded: Last updated = ", APP_LAST_UPDATED)

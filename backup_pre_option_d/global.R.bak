@@ -30,7 +30,6 @@
 # load required packages
 library(magrittr)
 library(dplyr)
-library(lubridate)
 # library(ggplot2)
 library(leaflet)
 library(geojsonio)
@@ -58,20 +57,13 @@ suppressPackageStartupMessages(library(shiny))
 # Load configuration (editable by non-technical users)
 source("config.R")
 
-# Load Image (static data: geojson, emissions, production, palettes, coordinates)
+# Load Image
 load("image.RData")
 
 # Force garbage collection after loading large workspace
 gc()
 
-# Refresh policy data from Google Sheets (if enabled in config.R)
-# Downloads fresh MBL, Subsidy Removal, Divestment, Country Overview, and
-# State & City data, then recomputes all aggregation columns.
-# Falls back to image.RData data if the Google Sheet is unreachable.
-source("google_sheets_refresh.R")
-refresh_from_google_sheets()
-
-# components (maps.R rebuilds the basemap using the refreshed data)
+# components
 source("components/cards.R")
 source("components/maps.R")
 

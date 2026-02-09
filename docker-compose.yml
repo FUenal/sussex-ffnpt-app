@@ -1,8 +1,29 @@
 ---
 services:
   fos_app:
+    platform: linux/amd64
     build:
       context: .
     restart: always
     ports:
-     - "3838:3838"
+      - "3838:3838"
+    # Memory limits to prevent runaway memory usage
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G
+    # Health check to detect unresponsive container
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3838"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # Log rotation to prevent disk fill
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
